@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import "./globals.css";
 import Footer from "./Footer";
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Sadiatul Marzia | Portfolio",
   description: "My personal portfolio in Next.js",
