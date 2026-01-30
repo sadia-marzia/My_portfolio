@@ -1,15 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Projects() {
+function ProjectsContent() {
+  // ✅ ALL HOOKS AT THE TOP
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const locale = searchParams.get("locale") || "en";
 
-  const translations = require(`../../locales/${locale}.json`);
-
+  const [translations, setTranslations] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+
+  // ✅ Dynamic import (client-safe)
+  useEffect(() => {
+    setLoading(true);
+
+    import(`../../locales/${locale}.json`)
+      .then((data) => setTranslations(data))
+      .catch((err) =>
+        console.error(`Error loading locale ${locale}`, err)
+      )
+      .finally(() => setLoading(false));
+  }, [locale]);
+
+  // ✅ Conditional return AFTER all hooks
+  if (loading || !translations) {
+    return <p className="text-center mt-10">Loading projects...</p>;
+  }
 
   const allProjects = [
     {
@@ -59,18 +79,14 @@ export default function Projects() {
   const filteredProjects =
     selectedTopic === "all"
       ? allProjects
-      : allProjects.filter((project) => project.topic === selectedTopic);
-
-  const router = useRouter();
+      : allProjects.filter((p) => p.topic === selectedTopic);
 
   return (
     <div className="container mx-auto py-20 px-6">
-      {/* ===== PAGE TITLE ===== */}
       <h1 className="text-3xl md:text-4xl text-navy font-bold mb-8 text-center">
         {translations.projects.title}
       </h1>
 
-      {/* ===== TOPIC FILTER ===== */}
       <div className="flex flex-wrap gap-3 justify-center mb-12">
         {[
           { key: "all", label: translations.projects.showAll },
@@ -78,41 +94,32 @@ export default function Projects() {
           { key: "Web Development", label: "Web Development" },
           { key: "Automation / IOT", label: "Automation / IOT" },
           { key: "AI/ ML", label: "AI / ML" },
-        ].map((item) => {
-          const isActive = selectedTopic === item.key;
-
-          return (
-            <button
-              key={item.key}
-              onClick={() => setSelectedTopic(item.key)}
-              className={`
-                px-5 py-2 rounded-full text-sm font-medium
-                transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-navy text-white shadow-md scale-[1.02]"
-                    : "bg-ash-light text-navy hover:bg-navy hover:text-white"
-                }
-              `}
-            >
-              {item.label}
-            </button>
-          );
-        })}
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setSelectedTopic(item.key)}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition
+              ${
+                selectedTopic === item.key
+                  ? "bg-navy text-white"
+                  : "bg-ash-light text-navy hover:bg-navy hover:text-white"
+              }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      {/* ===== PROJECT LIST ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {filteredProjects.map((project) => (
           <div
             key={project.id}
-            className="p-6 bg-ash-light rounded-xl shadow-sm hover:shadow-md transition"
+            className="p-6 bg-ash-light rounded-xl shadow-sm hover:shadow-md"
           >
-            <h2 className="text-xl text-navy font-bold mb-2">
+            <h2 className="text-xl font-bold text-navy mb-2">
               {project.title}
             </h2>
-
-            <p className="text-ash-dark text-sm leading-relaxed">
+            <p className="text-sm text-ash-dark">
               {project.description}
             </p>
 
@@ -120,8 +127,7 @@ export default function Projects() {
               onClick={() =>
                 router.push(`/projects/${project.id}?locale=${locale}`)
               }
-              className="mt-5 inline-block px-5 py-2 bg-accent text-white rounded-lg
-                         hover:bg-accent-light transition duration-200"
+              className="mt-5 px-5 py-2 bg-accent text-white rounded-lg hover:bg-accent-light"
             >
               {translations.projects.detailsButton}
             </button>
@@ -129,5 +135,14 @@ export default function Projects() {
         ))}
       </div>
     </div>
+  );
+}
+
+// ✅ Suspense wrapper (correct usage)
+export default function Projects() {
+  return (
+    <Suspense fallback={<p className="text-center mt-10">Loading page...</p>}>
+      <ProjectsContent />
+    </Suspense>
   );
 }

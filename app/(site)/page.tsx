@@ -1,6 +1,9 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import en from "../locales/en.json";
+import bn from "../locales/bn.json";
+
 import Link from "next/link";
 import {
   FaUser,
@@ -9,6 +12,10 @@ import {
   FaEnvelope,
 } from "react-icons/fa";
 import { AiOutlineFileSearch } from "react-icons/ai";
+const translationsMap: Record<string, any> = {
+  en,
+  bn,
+};
 
 export default function HomePage() {
   const params = useSearchParams();
